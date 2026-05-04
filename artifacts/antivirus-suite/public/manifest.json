@@ -1,0 +1,50 @@
+{
+  "name": "SecureShield Antivirus Suite",
+  "short_name": "SecureShield",
+  "description": "Comprehensive multi-layer security protecting your digital life — virus scans, AI scam detection, privacy tools and more.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "lang": "en-US",
+  "categories": ["security", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Smart Scan",
+      "short_name": "Scan",
+      "description": "Run a quick Smart Scan",
+      "url": "/scan",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Scam Guardian AI",
+      "short_name": "Scam AI",
+      "description": "Analyze suspicious messages with AI",
+      "url": "/scam-guardian",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Privacy Center",
+      "short_name": "Privacy",
+      "description": "Protect your personal data",
+      "url": "/privacy",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
