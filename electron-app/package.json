@@ -1,0 +1,53 @@
+{
+  "name": "secureshield",
+  "version": "1.0.0",
+  "description": "SecureShield Antivirus Suite – Multi-layer security protection",
+  "main": "main.js",
+  "author": "SecureShield",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "icons": "node create-icons.mjs",
+    "build:win": "node create-icons.mjs && electron-builder --win --x64",
+    "build:all": "node create-icons.mjs && electron-builder --win --mac --linux"
+  },
+  "build": {
+    "appId": "com.secureshield.antivirus",
+    "productName": "SecureShield",
+    "copyright": "Copyright © 2025 SecureShield",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "splash.html", "build/**"],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SecureShield",
+      "installerHeaderIcon": "build/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "license": "license.txt"
+    },
+    "publish": [{ "provider": "github", "releaseType": "release" }]
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.33.5"
+  }
+}

@@ -1,0 +1,94 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build SecureShield .exe
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: electron-app/package-lock.json
+
+      - name: Install Electron app dependencies
+        working-directory: electron-app
+        run: npm install
+
+      - name: Generate app icons
+        working-directory: electron-app
+        run: node create-icons.mjs
+
+      - name: Set app URL from GitHub Variable
+        working-directory: electron-app
+        shell: pwsh
+        run: |
+          $url = if ($env:SECURESHIELD_URL) { $env:SECURESHIELD_URL } else { "https://YOUR-APP.replit.app" }
+          Write-Host "Building with APP_URL = $url"
+          (Get-Content main.js) -replace "https://YOUR-APP.replit.app", $url | Set-Content main.js
+        env:
+          SECURESHIELD_URL: ${{ vars.SECURESHIELD_URL }}
+
+      - name: Build Windows installer
+        working-directory: electron-app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win
+
+      - name: List output files
+        working-directory: electron-app/dist
+        run: Get-ChildItem -Recurse | Select-Object Name, Length
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SecureShield-Windows-Setup
+          path: |
+            electron-app/dist/*.exe
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SecureShield ${{ github.ref_name }}"
+          body: |
+            ## SecureShield ${{ github.ref_name }}
+
+            ### Download & Install on Windows 11
+
+            | File | Description |
+            |------|-------------|
+            | **SecureShield-Setup-${{ github.ref_name }}.exe** | Full installer — installs to Program Files, Start Menu, Desktop shortcut |
+            | **SecureShield-${{ github.ref_name }}.exe** | Portable — run without installing |
+
+            ### First-time install
+            1. Download the Setup `.exe` below
+            2. Run it — Windows may show a SmartScreen warning, click **More info → Run anyway**
+            3. Choose install location and click Install
+            4. SecureShield launches automatically with a tray icon
+
+            ### What's new
+          files: |
+            electron-app/dist/SecureShield-Setup-*.exe
+            electron-app/dist/SecureShield-*.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
