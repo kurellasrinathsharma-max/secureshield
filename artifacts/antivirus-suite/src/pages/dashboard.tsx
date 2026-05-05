@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   ShieldCheck, Clock, AlertTriangle, Bug, ArrowRight, Shield, Globe,
   HardDrive, Search, MessageSquareWarning, Radio, RefreshCw,
-  ExternalLink, Zap, ChevronRight
+  ExternalLink, Zap, ChevronRight, Monitor, Download
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -374,6 +374,40 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Windows Desktop App Download */}
+      <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none">
+          <Monitor className="w-48 h-48" />
+        </div>
+        <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-full border border-primary/20 shrink-0">
+              <Monitor className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="font-bold">SecureShield for Windows</h3>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary">FREE</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Install the full desktop app on Windows 11 — system tray, auto-updates, offline protection.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://github.com/kurellasrinathsharma-max/secureshield/releases/latest"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0"
+          >
+            <Button className="gap-2">
+              <Download className="h-4 w-4" />
+              Download for Windows
+            </Button>
+          </a>
+        </CardContent>
+      </Card>
 
       {/* Scam Guardian CTA */}
       <Card className="bg-secondary/50 border-none">
