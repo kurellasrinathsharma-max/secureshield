@@ -33,6 +33,13 @@ type ThreatFeedResponse = {
   error?: string;
 };
 
+type UserSettings = {
+  displayName: string;
+  emailAlertsEnabled: boolean;
+  criticalThreatAlerts: boolean;
+  threatFeedEnabled: boolean;
+};
+
 function daysAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -63,6 +70,20 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, []);
 
+  const { data: settings } = useQuery<UserSettings>({
+    queryKey: ["user-settings"],
+    queryFn: async () => {
+      const r = await fetch(`${import.meta.env.BASE_URL}api/user/settings`);
+      if (!r.ok) throw new Error("Failed to load settings");
+      return r.json() as Promise<UserSettings>;
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const threatFeedEnabled = settings?.threatFeedEnabled ?? true;
+  const displayName = settings?.displayName ?? user?.name ?? "there";
+  const firstName = displayName.split(" ")[0];
+
   const { data: feed, isLoading: feedLoading, refetch, dataUpdatedAt } = useQuery<ThreatFeedResponse>({
     queryKey: ["threat-feed"],
     queryFn: async () => {
@@ -72,9 +93,8 @@ export default function Dashboard() {
     },
     refetchInterval: 5 * 60 * 1000,
     staleTime: 60 * 1000,
+    enabled: threatFeedEnabled,
   });
-
-  const firstName = user?.name?.split(" ")[0] ?? "there";
 
   return (
     <div className="space-y-8 pb-8">
@@ -189,10 +209,10 @@ export default function Dashboard() {
       {/* Quick shield status row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { title: "File Shield", icon: HardDrive, active: true },
-          { title: "Web Guard", icon: Globe, active: true },
-          { title: "Ransomware", icon: Shield, active: true },
-          { title: "Email Guard", icon: AlertTriangle, active: true }
+          { title: "File Shield", icon: HardDrive },
+          { title: "Web Guard", icon: Globe },
+          { title: "Ransomware", icon: Shield },
+          { title: "Email Guard", icon: AlertTriangle },
         ].map((shield) => (
           <Link key={shield.title} href="/shields">
             <Card className="hover:border-primary/40 transition-colors cursor-pointer">
@@ -211,128 +231,149 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Live Threat Intelligence Feed */}
-      <Card className="border-border">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Radio className="w-5 h-5 text-destructive" />
-              <CardTitle>Live Threat Intelligence</CardTitle>
-              <div className="flex items-center gap-1.5 ml-1">
-                <div className="w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
-                <span className="text-xs text-muted-foreground font-medium">LIVE</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {dataUpdatedAt > 0 && (
-                <span className="text-xs text-muted-foreground hidden sm:block">
-                  Updated {new Date(dataUpdatedAt).toLocaleTimeString()}
-                </span>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8"
-                onClick={() => refetch()}
-                disabled={feedLoading}
-                data-testid="btn-refresh-feed"
-              >
-                <RefreshCw className={`w-4 h-4 ${feedLoading ? "animate-spin" : ""}`} />
-              </Button>
-            </div>
-          </div>
-          <CardDescription>
-            Real-time feed from CISA's Known Exploited Vulnerabilities catalog — active threats that attackers are using right now.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence mode="wait">
-            {feedLoading && !feed ? (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-secondary/40 rounded-lg animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
-                ))}
-              </motion.div>
-            ) : feed?.error ? (
-              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex flex-col items-center gap-3 py-10 text-center">
-                <AlertTriangle className="w-8 h-8 text-warning opacity-50" />
-                <p className="text-muted-foreground text-sm">Could not load threat feed. Check your connection.</p>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
-              </motion.div>
-            ) : (
-              <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-                {feed?.stale && (
-                  <div className="text-xs text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-md mb-3">
-                    Showing cached data — live feed temporarily unavailable.
+      {/* Live Threat Intelligence Feed — conditionally shown */}
+      <AnimatePresence mode="wait">
+        {threatFeedEnabled ? (
+          <motion.div key="feed-on" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Card className="border-border">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-5 h-5 text-destructive" />
+                    <CardTitle>Live Threat Intelligence</CardTitle>
+                    <div className="flex items-center gap-1.5 ml-1">
+                      <div className="w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                      <span className="text-xs text-muted-foreground font-medium">LIVE</span>
+                    </div>
                   </div>
-                )}
-                {(feed?.items ?? []).map((item, i) => {
-                  const severity = severityFromName(item.vulnerabilityName);
-                  const isRansomware = item.knownRansomwareCampaignUse === "Known";
-                  return (
-                    <motion.div
-                      key={item.cveID}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-secondary/30 transition-colors group"
+                  <div className="flex items-center gap-2">
+                    {dataUpdatedAt > 0 && (
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        Updated {new Date(dataUpdatedAt).toLocaleTimeString()}
+                      </span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() => refetch()}
+                      disabled={feedLoading}
                     >
-                      <div className="shrink-0 mt-0.5">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 ${severity === "critical" ? "bg-destructive" : severity === "high" ? "bg-warning" : "bg-primary"}`} />
+                      <RefreshCw className={`w-4 h-4 ${feedLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription>
+                  Real-time feed from CISA's Known Exploited Vulnerabilities catalog — active threats attackers are using right now.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {feedLoading && !feed ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-16 bg-secondary/40 rounded-lg animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                    ))}
+                  </div>
+                ) : feed?.error ? (
+                  <div className="flex flex-col items-center gap-3 py-10 text-center">
+                    <AlertTriangle className="w-8 h-8 text-warning opacity-50" />
+                    <p className="text-muted-foreground text-sm">Could not load threat feed. Check your connection.</p>
+                    <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {feed?.stale && (
+                      <div className="text-xs text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-md mb-3">
+                        Showing cached data — live feed temporarily unavailable.
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <span className="font-mono text-xs font-bold text-primary">{item.cveID}</span>
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${SEVERITY_STYLE[severity]}`}>
-                            {severity.toUpperCase()}
-                          </Badge>
-                          {isRansomware && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-destructive/10 text-destructive border-destructive/30">
-                              RANSOMWARE
-                            </Badge>
-                          )}
-                          <span className="text-xs text-muted-foreground ml-auto shrink-0">{daysAgo(item.dateAdded)}</span>
-                        </div>
-                        <p className="text-sm font-medium truncate">{item.vulnerabilityName}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.vendorProject} · {item.product}
+                    )}
+                    {(feed?.items ?? []).map((item, i) => {
+                      const severity = severityFromName(item.vulnerabilityName);
+                      const isRansomware = item.knownRansomwareCampaignUse === "Known";
+                      return (
+                        <motion.div
+                          key={item.cveID}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-secondary/30 transition-colors group"
+                        >
+                          <div className="shrink-0 mt-2">
+                            <div className={`w-2 h-2 rounded-full ${severity === "critical" ? "bg-destructive" : severity === "high" ? "bg-warning" : "bg-primary"}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                              <span className="font-mono text-xs font-bold text-primary">{item.cveID}</span>
+                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${SEVERITY_STYLE[severity]}`}>
+                                {severity.toUpperCase()}
+                              </Badge>
+                              {isRansomware && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-destructive/10 text-destructive border-destructive/30">
+                                  RANSOMWARE
+                                </Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground ml-auto shrink-0">{daysAgo(item.dateAdded)}</span>
+                            </div>
+                            <p className="text-sm font-medium truncate">{item.vulnerabilityName}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {item.vendorProject} · {item.product}
+                            </p>
+                          </div>
+                          <a
+                            href={`https://nvd.nist.gov/vuln/detail/${item.cveID}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground mt-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </motion.div>
+                      );
+                    })}
+                    {feed?.catalogVersion && (
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                        <p className="text-xs text-muted-foreground">
+                          Source: CISA KEV Catalog v{feed.catalogVersion} · Auto-refreshes every 5 min
                         </p>
+                        <a
+                          href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary flex items-center gap-1 hover:underline"
+                        >
+                          Full catalog <ChevronRight className="w-3 h-3" />
+                        </a>
                       </div>
-                      <a
-                        href={`https://nvd.nist.gov/vuln/detail/${item.cveID}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground mt-1"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </motion.div>
-                  );
-                })}
-
-                {feed?.catalogVersion && (
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <p className="text-xs text-muted-foreground">
-                      Source: CISA KEV Catalog v{feed.catalogVersion} · Auto-refreshes every 5 min
-                    </p>
-                    <a
-                      href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary flex items-center gap-1 hover:underline"
-                    >
-                      Full catalog <ChevronRight className="w-3 h-3" />
-                    </a>
+                    )}
                   </div>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div key="feed-off" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Card className="border-dashed border-border/60 bg-secondary/20">
+              <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-background rounded-full shadow-sm opacity-40">
+                    <Radio className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-muted-foreground">Threat Intelligence Feed — Off</h3>
+                    <p className="text-sm text-muted-foreground">The live CISA exploit feed is disabled in your settings.</p>
+                  </div>
+                </div>
+                <Link href="/settings">
+                  <Button variant="outline" size="sm" className="shrink-0">
+                    Enable in Settings <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Scam Guardian CTA */}
       <Card className="bg-secondary/50 border-none">
