@@ -42,6 +42,7 @@
     "publish": [{ "provider": "github", "releaseType": "release" }]
   },
   "dependencies": {
+    "electron-log": "^5.2.4",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {

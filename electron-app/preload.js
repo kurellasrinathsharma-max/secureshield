@@ -1,7 +1,7 @@
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
-// Expose a minimal, safe API to the renderer
 contextBridge.exposeInMainWorld("electronShield", {
   platform: process.platform,
-  version: process.env.npm_package_version || "1.0.0",
+  getVersion: () => ipcRenderer.invoke("app-version"),
+  checkForUpdates: () => ipcRenderer.invoke("check-updates"),
 });
