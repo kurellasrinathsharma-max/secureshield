@@ -23,8 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: electron-app/package-lock.json
 
       - name: Install Electron app dependencies
         working-directory: electron-app
@@ -48,7 +46,7 @@ jobs:
         working-directory: electron-app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build:win
+        run: npx electron-builder --win --x64
 
       - name: List output files
         working-directory: electron-app/dist
