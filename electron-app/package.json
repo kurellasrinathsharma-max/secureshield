@@ -16,30 +16,12 @@
     "appId": "com.secureshield.antivirus",
     "productName": "SecureShield",
     "copyright": "Copyright © 2025 SecureShield",
-    "directories": {
-      "output": "dist",
-      "buildResources": "build"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "splash.html",
-      "build/**"
-    ],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "splash.html", "build/**"],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ],
       "icon": "build/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}",
@@ -57,12 +39,7 @@
       "runAfterFinish": true,
       "license": "license.txt"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "releaseType": "release"
-      }
-    ]
+    "publish": [{ "provider": "github", "releaseType": "release" }]
   },
   "dependencies": {
     "electron-log": "^5.2.4",
@@ -70,8 +47,6 @@
   },
   "devDependencies": {
     "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
-    "png-to-ico": "^2.1.8",
-    "sharp": "^0.33.5"
+    "electron-builder": "^25.1.8"
   }
 }
