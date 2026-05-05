@@ -1,0 +1,9 @@
+{
+  "test@example.com": {
+    "displayName": "Test User Updated",
+    "emailAlertsEnabled": true,
+    "criticalThreatAlerts": true,
+    "threatFeedEnabled": false,
+    "updatedAt": "2026-05-05T04:43:27.649Z"
+  }
+}

@@ -16,6 +16,7 @@ import RescueDisk from "@/pages/rescue-disk";
 import Privacy from "@/pages/privacy";
 import Performance from "@/pages/performance";
 import SecurityTools from "@/pages/security";
+import SettingsPage from "@/pages/settings";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ function ProtectedRouter() {
         <Route path="/privacy" component={Privacy} />
         <Route path="/performance" component={Performance} />
         <Route path="/security" component={SecurityTools} />
+        <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

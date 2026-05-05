@@ -13,7 +13,7 @@ import {
   Menu,
   X,
   LogOut,
-  User,
+  Settings,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "./theme-provider";
@@ -100,13 +100,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* User avatar */}
           {user && (
             <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-primary">{getInitials(user.name)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{user.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{user.email}</div>
-              </div>
+              <Link href="/settings" className="flex items-center gap-3 flex-1 min-w-0 group">
+                <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 group-hover:border-primary/60 transition-colors">
+                  <span className="text-xs font-bold text-primary">{getInitials(user.name)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{user.name}</div>
+                  <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                    <Settings className="w-2.5 h-2.5" /> Settings
+                  </div>
+                </div>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
